@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>地图展示用户分布及其信息</title>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="Access-Control-Allow-Origin" content="*">
+	<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="../js/jedate-test.js"></script>
+    <script src="../js/jquery.jedate.js"></script>
+    <script src="../js/jquery.jedate.min.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="../css/jeDate-test.css">  
+	<link rel="stylesheet" type="text/css" href="../css/jedate.css">   
+
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  
+	<link rel="stylesheet" type="text/css" href="../css/sw_index.css">
+    <link rel="stylesheet" href="https://cache.amap.com/lbs/static/main1119.css"/>
+    <script src="https://cache.amap.com/lbs/static/es5.min.js"></script>
+    <script src="https://webapi.amap.com/maps?v=1.4.9&key=867638083d99b9f8cccc4db00200962e"></script>
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.1.0-release/echarts.js"></script>
+</head>
+<body class="container-fluid">
+<!--<div class="container-fluid" style="padding-left:0px; padding-right:0px;">-->
+		<!-- 头部显示导航栏 -->
+        <nav class="navbar navbar-light bg-faded" id="navbar">
+            <div class="sw_head_bar_buttons sw_bar_style">
+                <!-- 导航栏logo-->
+                <div class="sw_bar_logo">
+                    <img class="sw_bar_logo_img" src="http://sc-yf.com/bssets/i/logo.png">
+                </div>
+
+                <!-- 导航栏按钮 -->
+                <div style="float: right;">
+                    <span ><a href="index.html">首页</a></span>&nbsp;&nbsp;&nbsp;&nbsp;<span><a href="statistics.html">数据统计</a></span>
+                </div>
+            </div>
+        </nav>
+		<!-- 头部显示导航栏结束 -->
+		<!-- 条件选择框 -->
+		<div class="sw_info_select_div" id="navSelect">
+			
+			<input type="text" id="selectLevel" autocomplete="off" hidden="hidden">	
+
+			<select id="provincesSelect" onchange="getCitiesOfAProvince()">
+				<option disabled selected style='display:none;'> 选择省</option>
+			</select>
+
+			<select id="citiesSelect" onchange="getAreasOfACity()">
+				<option disabled selected style='display:none;'> 选择市</option>
+			</select>
+
+			<select id="areasSelect" onchange="recordAreaLevel()">
+				<option disabled selected style='display:none;'> 选择区</option>
+			</select>
+
+			<select id = "onlineStu">
+				<option value="1">在线</option>
+				<option value="2">不在线</option>
+				<option value="3" selected="">全部</option>
+			</select>
+
+			 
+			<button class="btn btn-default btn-sm" onclick="findBySelectValue()">确认</button>
+
+			<input  id="searchByInput" type="text" name="code" placeholder="输入编号">
+
+		</div>
+		<!-- 条件选择框结束 -->
+		<!-- 信息显示部分 -->
+		<div class="row">
+			<!-- 地图显示部分 -->
+			<div id="map" class="col-xs-12 col-sm-12 col-md-9 sw_info_widow" >
+				<!-- <img style="width: 102%;height: 100%;margin-left: -1%;margin-right: -3%" src="../img/map.png"> -->
+                
+			</div>
+			<!-- 设备信息显示部分 -->
+			<div class="col-xs-12 col-sm-12 col-md-3 sw_info_widow sw_info_right" id="sw_info">
+				<table class="table table-hover info_window_table" >
+					<div class="row">
+						<tr>
+							<td class="info_table_item">设备数量</td>
+							<td>2000</td>
+						</tr>
+						<tr>
+							<td class="info_table_item">男性数量</td>
+							<td>1100</td>
+						</tr>
+						<tr>
+							<td class="info_table_item">女性数量</td>
+							<td>900</td>
+						</tr>
+						<tr>
+							<td class="info_table_item">70岁以上数量</td>
+							<td>700</td>
+						</tr>
+						<tr>
+							<td class="info_table_item">60-70岁数量</td>
+							<td>400</td>
+						</tr>
+						<tr>
+							<td class="info_table_item">60岁以下数量</td>
+							<td>900</td>
+						</tr>
+					</div>
+				</table>
+			</div>
+		</div>
+		<!-- 信息显示部分结束 -->
+
+		<!-- 模态窗口部分 -->
+		<div class="modal" hidden="true" id="trail" tabindex="-1" role="dialog">
+		  <div class="modal-dialog" style="width: 50%;" role="document">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		        <h4 class="modal-title">手表移动轨迹</h4>
+		        <div class="container">
+		        	<div class="row">
+			        	<div class="col-md-5">
+			        		<div class="row" style="margin-bottom: 6px;">
+					        	<div class="col-sm-12 col-md-6">
+					        		<div class="form-group row">
+										<div class="col-md-12">
+											<div class="input-group">
+												<span class="input-group-addon" style="cursor: pointer;"
+												onclick="$.jeDate('#edit_purchase_date',{trigger:false,format: 'YYYY-MM-DD'})">选择日期</span>
+												<input placeholder="选择日期" type="text"
+												class="form-control" id="edit_purchase_date"
+												name="edit_purchase_date" readonly>
+											</div>
+										</div>
+									</div>
+					        	</div>
+					        </div>
+			        	</div>
+				        <div class="col-md-2" style="float: left;margin-left: -18%">
+				        	<button class="btn btn-default" onclick="showTrail()"> 确定</button>
+				        </div>
+		        	</div>
+		        </div>
+
+		      </div>
+		      <div id="trailMap" style="height: 700px;" class="modal-body">
+		      	
+		      </div>
+		    </div>
+		  </div>
+		</div>
+        <!-- 该窗口用来设置手表相关配置 -->
+		<div class="modal" hidden="true" id="watchsetting" tabindex="-1" role="dialog">
+		  <div class="modal-dialog" style="width: 35%;" role="document">
+		    <div class="modal-content modal_watch_set">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		        <h4 class="modal-title">手表设置</h4>
+		      </div>
+		      <div style="height: auto;" class="modal-body">
+		      	<div id="watch_set" class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <span class="sw_info_lable_static">定位频率:</span>
+                        </div>
+                        <div class="col-md-7">
+                            <select id="frequency">
+                            	<option value="0">选择定位频率</option>
+                            	<option value="1">1分钟一次</option>
+                            	<option value="5">5分钟一次</option>
+                            	<option value="10">10分钟一次</option>
+                            	<option value="15">15分钟一次</option>
+                            	<option value="20">20分钟一次</option>
+                            	<option value="25">25分钟一次</option>
+                            	<option value="30">30分钟一次</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <span class="sw_info_lable_static">摔倒报警开关:</span>
+                        </div>
+                        <div class="col-md-9">
+                            <div>
+							    <input id="alarm_switch" type="checkbox" checked=false onclick="alarmSwitch(this)" />
+							</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <span class="sw_info_lable_static">摔倒灵敏度:</span>
+                        </div>
+                        <div class="col-md-7">
+                            <select id="sensitivity">
+                            	<option value="0">选择灵敏度</option>
+                            	<option value="1">第一级</option>
+                            	<option value="2">第二级</option>
+                            	<option value="3">第三级</option>
+                            	<option value="4">第四级</option>
+                            	<option value="5">第五级</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-3">
+                            <span class="sw_info_lable_static">发送控制指令:</span>
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-6" >
+                            <input type="text" style="width: 100%" name="monitor_info" id="monitor_info" />
+                        </div>
+                        <div class="col-xs-12 col-sm-12 col-md-3">
+                        	<button id='change_set' style="margin-top: 0;" onclick="sendMessage()" class="btn btn-default sw_info_lable">发送</button>
+                        </div>
+                    </div>
+                </div>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+        <!-- 模态窗口部分结束 -->
+		<div id="devid" hidden='true'></div>
+		<div id="table"  hidden='true' >
+			<div id='chars' style='height: 200px;width: 200px;'>
+				<h4 style="text-align: center;">手表信息</h4><br>
+				<span class="sw_table_span">设备编码:</span><span  class="sw_table_value_span" id="devcode"></span><br>
+				<span class="sw_table_span" >健康状况:</span><span  class="sw_table_value_span" id="health"></span><br>
+				<span class="sw_table_span" >用户性别:</span><span  class="sw_table_value_span"  id="sex"></span><br>
+				<span class="sw_table_span" >手表电话:</span><span  class="sw_table_value_span" id="tel"></span><br>
+				<span class="sw_table_span" >用户年龄:</span><span  class="sw_table_value_span" id="age"></span><br>
+				<span class="sw_table_span" >开始时间:</span><span  class="sw_table_value_span"  id="gmt_modified"></span><br>
+				<span class="sw_table_span" >关联用户:</span><span  class="sw_table_value_span"  id="ships"></span>个<br>
+			</div>
+		</div>
+		<!-- 该窗口用来显示指定手表关联的用户信息 -->
+		<div class="modal" id="wx_lm_users" tabindex="-1" role="dialog">
+		  <div class="modal-dialog" style="width: 35%;" role="document">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		        <h4 class="modal-title">手表关联用户</h4>
+		      </div>
+		      <div id="wx_lm_users_list"  class="modal-body" >
+		      	<div id="no_select" hidden="true" style="text-align: center;"></div>
+                <div id="user_info" class="container-fluid">
+                </div>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+		<!-- 模态窗口部分结束 -->
+<!--	</div>-->
+
+	<script type="text/javascript">
+		function showTrail(){
+			var trailMap = new AMap.Map('trailMap', {
+                center: [104.0084,30.710541],
+                viewMode:'2D',
+                features:['bg','point','road','building'],
+                mapStyle:'amap://styles/light',
+                layers: [ 
+                         new AMap.TileLayer.RoadNet()],
+                zoom: 10
+	        });
+			var thisDay=null;
+			//获取生成日期
+			var intputDate= $("#edit_purchase_date").val();
+			//$("#edit_purchase_date").val('');
+			intputDate=intputDate.replace(' ',"");
+			if (intputDate==null||intputDate=='') {
+				//生成日期
+				var date=new Date();
+				var mouth=((date.getMonth()+1)+"").length==2?(date.getMonth()+1)+"":"0"+(date.getMonth()+1);
+				var day=((date.getDate())+"").length==2?(date.getDate())+"":"0"+(date.getDate());
+				thisDay=date.getFullYear()+"-"+mouth+"-"+day;
+			}else{
+				thisDay=intputDate;
+			}
+
+			
+			var dev=$("#devid").text();
+			$.ajax({
+                type: "GET",
+                url: "https://www.3firelink.xyz/smart_watch/dev/id/"+dev+"/st/"+thisDay+"/et/0/pos",
+                cache:false,
+                dataType: "jsonp",    
+                success: function(res){
+                	//画轨迹
+                	var path=new Array();
+                    for(var i=0;i<res.length;i++){
+                    	path.push(new AMap.LngLat(res[i].lng,res[i].lat));
+                    }
+                    trailMap.setZoomAndCenter(16,new AMap.LngLat(res[res.length-1].lng,res[res.length-1].lat));
+                    var polyline = new AMap.Polyline({
+										path: path, //设置线覆盖物路径
+										strokeColor: "#FF0000", //线颜色
+										strokeOpacity: 1, //线透明度
+										showDir:true,
+										strokeWeight: 7, //线宽
+										strokeStyle: "solid", //线样式
+										strokeDasharray: [10, 5] //补充线样式
+										});
+                    polyline.setMap(trailMap);
+                }
+            });
+
+		}
+
+	</script>
+
+	<script type="text/javascript">
+		var healthDataWidth = 0;
+		var healthDataHeight = 0;
+        window.onload=function(){
+            var webSiteHeight = document.body.offsetHeight;
+            var navHeight = document.getElementById("navbar").offsetHeight + document.getElementById("navSelect").offsetHeight;
+            var contentHeight = (webSiteHeight - navHeight)*0.975;
+            console.log("信息内容高度："+contentHeight);
+            document.getElementById("map").style='height: '+contentHeight+'px;border-color: grey;border-width: 1px;border-style:solid;background-color: #ffffff;';
+            document.getElementById("sw_info").style='height: '+contentHeight+'px;border-color: grey;border-width: 1px;border-style:solid';
+            healthDataWidth = document.getElementById("sw_info").offsetWidth;
+            healthDataHeight = healthDataWidth/9*5;
+    //      $('#health_data').html('width: '+webSiteWidth*0.95+'px;height:'+webSiteHeight+'px;border-color: grey;border-width: 1px;border-style:solid;');
+
+        }
+        
+        //手表设置
+        function setWatch(obj){
+        	var id=$('#devid').text();
+           if (id==null||id=='') {
+           		alert("请选定设备后操作");
+           		return;
+           }
+
+           $(obj).attr("data-target","#watchsetting");
+            
+            //$('#frequency').val(5);
+            var url_get = "https://www.3firelink.xyz/smart_watch/show/setting?id="+id;
+            console.log(url_get);
+            //(get)
+            $.ajax({
+                type: "GET",
+                url: url_get,
+                cache: false,
+                dataType: "jsonp",
+                success: function(res_set){
+                	console.log(res_set);
+                	if(!res_set||res_set == null || res_set == ''||  res_set == 'undefined'){
+                		$('#sensitivity option[value="0"]').prop('selected',true);
+                		//$('#frequency').val(0);
+                		$('#frequency option[value="0"]').prop('selected',true);
+                		$('#alarm_switch').prop('checked',false);
+                	} else{
+	                    if(res_set.F == ""){
+	                    	$('#frequency option[value="0"]').prop('selected',true);
+	                    }else if(res_set.F!= ""){
+	                    	$('#frequency option[value="'+res_set.F+'"]').prop('selected',true);
+	                    }
+
+	                    if(res_set.S == ""){
+	                    	$('#sensitivity option[value="0"]').prop('selected',true);
+	                    }else if(res_set.S != ""){
+	                     	$('#sensitivity option[value="'+res_set.S+'"]').prop('selected',true);
+	                    }
+
+	                    if(res_set.A == ''){
+	                        $('#alarm_switch').prop('checked',false);
+	                    }
+	                    else if(res_set.A == '1'){
+	                        $('#alarm_switch').prop('checked',true);
+	                    }else if(res_set.A == '0'){
+	                        $('#alarm_switch').prop('checked',false);
+	                    }
+	                }
+                }
+            })
+            //(set)
+            $("#frequency").change(function(){
+                var checkValue_f = $("#frequency").find("option:selected").text();
+                console.log("checkValue_f:"+checkValue_f);
+                if(checkValue_f == '选择定位频率'){
+                	alert("请选择一个定位频率！");
+                }else{
+                	$.ajax({
+		                type: "GET",
+		                url: "https://www.3firelink.xyz/smart_watch/show/setting/F?id="+id+"&F="+checkValue_f,
+		                cache: false,
+		                dataType: "jsonp",
+		                success: function(res_set_send_s){
+		                    console.log(res_set_send_s); 
+		                }
+		            })
+                }
+            });
+            $("#sensitivity").change(function(){
+                var checkValue_s = $("#sensitivity").find("option:selected").text();
+                console.log("checkValue_s:"+checkValue_s);
+                if(checkValue_s == '选择灵敏度'){
+	                alert("请选择一个灵敏度！");
+                }else{
+                	$.ajax({
+		                type: "GET",
+		                url: "https://www.3firelink.xyz/smart_watch/show/setting/S?id="+id+"&S="+checkValue_s,
+		                cache: false,
+		                dataType: "jsonp",
+		                success: function(res_set_send_f){
+		                    console.log(res_set_send_f); 
+		                }
+		            })
+                }
+            });
+        }
+        //发送监听指令
+        function sendMessage(){
+        	var id=$('#devid').text();
+        	console.log("info:"+document.getElementById("monitor_info").value);
+        	if(document.getElementById("monitor_info").value != ''){
+        		var input_value = document.getElementById("monitor_info").value;
+	        	var url_input = "https://www.3firelink.xyz/smart_watch/show/setting/order?id="+id+"&order=" + input_value;
+	        	console.log(url_input);
+	        	$.ajax({
+	        		type: "GET",
+			        url: url_input,
+			        cache: false,
+			        dataType: "jsonp",
+			        success: function(res_set_send_f){
+			         	console.log(res_set_send_f); 
+			        }
+	        	})
+        	}else{
+        		alert("监听指令不能为空！");
+        	}
+        }
+
+        //报警开关状态改变
+        function alarmSwitch(o){
+        	console.log(o);
+        	var id=$('#devid').text();
+        	var switch_r = o.checked;
+        	var result = null;
+        	if(switch_r == true){
+        		result = '1';
+        	}else if(switch_r == false){
+        		result = '0';
+        	}
+        	$.ajax({
+		        type: "GET",
+		        url: "https://www.3firelink.xyz/smart_watch/show/setting/A?id="+id+"&A=" + result,
+                cache: false,
+	            dataType: "jsonp",
+		        success: function(res_set_send_f){
+		            console.log(res_set_send_f);             
+		        }
+		    })
+
+        }
+        
+        //radio判断显示哪个图表
+        function radioHealth(){
+        	var state = document.getElementsByName("radio_health");
+			if(state[0].checked == true){
+				showHealthDataPause();
+			}else if(state[1].checked == true){
+				//$("#health_data").html("");
+				showHealthDataRate();
+			}else if(state[2].checked == true){
+				//$("#health_data").html("");
+				showHealthDataContent();
+			}
+        	$('input[type=radio][name=radio_health]').change(function(){
+				if(state[0].checked == true){
+					showHealthDataPause();
+				}else if(state[1].checked == true){
+					//$("#health_data").html("");
+					showHealthDataRate();
+				}else if(state[2].checked == true){
+					//$("#health_data").html("");
+					showHealthDataContent();
+				}
+        	});
+        }
+
+        //显示与手表关联的用户信息
+		function showUser(){
+			var dev=$('#devid').text();
+			//showHealthData();
+            $.ajax({
+                type: "GET",
+                url: "https://www.3firelink.xyz/smart_watch/show/map/markeruserinfo?id="+dev,
+                cache:false,
+                dataType: "jsonp",    
+                success: function(res){
+                    console.log(res);
+                    if(res==null||res.length<1){
+                        $('#no_select').attr("hidden",false);
+                        $('#no_select').html("<text class='text_no_select'>没有选择手表</text>");
+                        $('#user_info').html(""); 
+                    } else{
+                        $('#no_select').attr("hidden",true);
+                        $('#user_avatar').html('');
+                        $('#user_info').html('');
+                        var len = res.length
+                        for(var i = 0;i < len;i ++){
+                            $('#user_info').append('<div class="row"><div class="col-md-2"><div id="user_avatar" class="user_avatar"><img style="width: 100%;height: auto; display: flex; flex-direction: column; margin: 5% 5%;" src="'+res[i].imageurl+'"></div></div><div class="col-md-10"><div id="table"><div id="chars" style="height: 90%;width: 80%"><div class="sw_table_span" id="user_info_item"><!-- 用户信息 --><div id="user_info" class="container-fluid"><div class="row"><!-- lable --><div class="col-md-8"><div class="container-fluid"><div class="row"><text>昵称：</text></div><div class="row"><text>手表使用者与用户关系：</text></div><div class="row"><text>用户电话号码：</text></div><div class="row"><text>用户名：</text></div></div></div><!-- values --><div class="col-md-4"><div class="container-fluid"><div class="row"><text>'+res[i].nickname+'</text></div><div class="row"><text>'+res[i].ship+'</text></div><div class="row"><text>'+res[i].tel+'</text></div><div class="row"><text>'+res[i].username+'</text></div></div></div></div></div><!-- 用户信息结束 --></div></div></div></div></div>');
+                        }
+                    }
+                }
+            });
+		}
+		
+		data0 = splitDataPause([
+				['09-08',120, 115, 75, 69],
+				['09-09',118, 112, 79, 72],
+				['09-10',116, 114, 77, 70],
+				['09-11',115, 113, 72, 68],
+				['09-12',117, 116, 69, 62],
+				['09-13',119, 115, 68, 64],
+				['09-14',114, 112, 67, 63]
+            ]);
+        data1 = splitData([
+            ['09-08',65, 61],
+            ['09-09',72, 62],
+            ['09-10',74, 63],
+            ['09-11',71, 64],
+            ['09-12',69, 67],
+            ['09-13',75, 66],
+            ['09-14',73, 65]
+        ]);
+        data2 = splitData([
+            ['09-08',95, 94],
+            ['09-09',97, 95],
+            ['09-10',94, 93],
+            ['09-11',98, 94],
+            ['09-12',99, 97],
+            ['09-13',95, 93],
+            ['09-14',98, 95]
+        ]);
+        console.info(data0);
+        console.info(data1);
+        
+		function splitDataPause(rawData) {
+            var categoryData = [];
+            var pauseHighMax = [];
+            var pauseHighMin = [];
+            var pauseLowMax = [];
+            var pauseLowMin = [];
+            var values = [];
+			 for (var i = 0; i < rawData.length; i++) {
+                categoryData.push(rawData[i].splice(0, 1)[0]);
+			    pauseHighMax.push(rawData[i].splice(0, 1)[0]);
+			    pauseHighMin.push(rawData[i].splice(0, 1)[0]);
+			    pauseLowMax.push(rawData[i].splice(0, 1)[0]);
+			    pauseLowMin.push(rawData[i].splice(0, 1)[0]);
+             }
+			 return {
+                 categoryData: categoryData,
+                 pauseHighMax: pauseHighMax, 
+                 pauseHighMin: pauseHighMin,
+                 pauseLowMax: pauseLowMax,
+                 pauseLowMin: pauseLowMin,
+			 };
+        }	
+        
+        function splitData(rawData) {
+            var categoryData = [];
+            var heartValuesMax = [];
+            var heartValuesMin = [];
+			 for (var i = 0; i < rawData.length; i++) {
+                categoryData.push(rawData[i].splice(0, 1)[0]);
+                heartValuesMax.push(rawData[i].splice(0, 1)[0]);
+                heartValuesMin.push(rawData[i].splice(0, 1)[0]);
+             }
+			 return {
+                 categoryData: categoryData,
+                 heartValuesMax: heartValuesMax,
+                 heartValuesMin: heartValuesMin
+			 };
+        }	
+        
+        function showHealthDataPause(){
+        	var pauseHighMax = [];
+			var pauseHighMin = [];
+			var pauseLowMax = [];
+			var pauseLowMin = [];
+			var categoryData = [];
+        	var dev=$('#devid').text();
+        	var url_pause = "https://www.3firelink.xyz/smart_watch/show/chardata/singlechart?id="+dev+"&type=P";
+			console.log(url_pause);
+			$.ajax({
+			        type: "GET",
+			        url: url_pause,
+	                cache: false,
+		            dataType: "jsonp",
+			        success: function(res_get_pause){
+			            console.log(res_get_pause); 
+			            var count = res_get_pause.length;
+			            for(var i = 0;i < count;i ++){
+			            	categoryData.push(res_get_pause[i].date);
+			            	pauseHighMax.push(res_get_pause[i].data.high.max);
+			            	pauseHighMin.push(res_get_pause[i].data.high.min);
+			            	pauseLowMax.push(res_get_pause[i].data.low.max);
+			            	pauseLowMin.push(res_get_pause[i].data.low.min);
+			            }
+			            // 基于准备好的dom，初始化echarts实例
+						var myChartPause = echarts.init(document.getElementById('health_data'));
+			            
+						// 使用刚指定的配置项和数据显示图表。
+						
+				        myChartPause.setOption(optionPause(categoryData,pauseHighMax,pauseHighMin,pauseLowMax,pauseLowMin),true);            
+			        }
+			    })
+//            $('#name').text(name);
+//			$('#sex').text(sex);
+//			$('#age').text(age);
+		}
+		function showHealthDataRate(){
+			var categoryData = [];
+			var heartValuesMax = [];
+		    var heartValuesMin = [];
+			var dev=$('#devid').text();
+			//获取服务器心率数据
+	        $.ajax({
+			        type: "GET",
+			        url: "https://www.3firelink.xyz/smart_watch/show/chardata/singlechart?id="+dev+"&type=H",
+	                cache: false,
+		            dataType: "jsonp",
+			        success: function(res_get_rate){
+			            console.log(res_get_rate); 
+			            var count = res_get_rate.length;
+			            for(var i = 0;i < count;i ++){
+			            	categoryData.push(res_get_rate[i].date);
+			            	heartValuesMax.push(res_get_rate[i].data.max);
+			            	heartValuesMin.push(res_get_rate[i].data.min);
+			            } 
+			            // 基于准备好的dom，初始化echarts实例
+						var myChartRate = echarts.init(document.getElementById('health_data'));
+			            
+						// 使用刚指定的配置项和数据显示图表。
+						
+				        myChartRate.setOption(optionRate(categoryData,heartValuesMax,heartValuesMin),true);           
+			        }
+			    })
+	//            $('#name').text(name);
+	//			$('#sex').text(sex);
+	//			$('#age').text(age);
+		}
+		function showHealthDataContent(){
+			var dev=$('#devid').text();
+			var categoryData = [];
+		    var oxyValueMax = [];
+		    var oxyValueMin = [];
+			$.ajax({
+		        type: "GET",
+		        url: "https://www.3firelink.xyz/smart_watch/show/chardata/singlechart?id="+dev+"&type=O",
+                cache: false,
+	            dataType: "jsonp",
+		        success: function(res_get_content){
+		            console.log(res_get_content); 
+		            var count = res_get_content.length;
+		            for(var i = 0;i < count;i ++){
+		            	categoryData.push(res_get_content[i].date);
+		            	oxyValueMax.push(res_get_content[i].data.max);
+		            	oxyValueMin.push(res_get_content[i].data.min);
+		            }            
+		            // 基于准备好的dom，初始化echarts实例
+					var myChartContent = echarts.init(document.getElementById('health_data'));
+		            
+					// 使用刚指定的配置项和数据显示图表。
+					
+			        myChartContent.setOption(optionContent(categoryData,heartValuesMax,heartValuesMin),true);
+				        }
+		    })
+//          $('#name').text(name);
+//			$('#sex').text(sex);
+//			$('#age').text(age);
+		}
+
+		function optionPause(time,p_h_max,p_h_min,p_l_max,p_l_min){
+			          
+            var option = {
+                title: {
+//                    text: '血压心率',
+                    left: 0
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    },
+                },
+                legend: {
+                    data: ['收缩压极大值','收缩压极小值', '舒张压极大值', '舒张压极小值'],
+                    right: 10
+                },
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    bottom: '15%'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: time,
+                    scale: true,
+                    axisLabel: {
+		              interval: 0
+		            },
+                    boundaryGap : false,
+                    axisLine: {onZero: false},
+                    splitLine: {show: false},
+                    splitNumber: 20,
+                    min: 'dataMin',
+                    max: 'dataMax'
+                },
+                yAxis: [
+				    {
+				        name: '血压(mmHg)',
+				        type: 'value',
+                        scale: true,
+                        splitLine: {
+			              lineStyle: {
+			                type: 'dashed'
+			              }
+			            }
+				    }
+                ] ,
+                series: [
+                    {
+                        name: '收缩压极大值',
+                        type: 'line',
+                        data: p_h_max,
+                        symbol:'circle',
+				        smooth: true,
+				        animation: false,
+				        lineStyle: {
+				             normal: {
+				                width: 3
+				            }
+				        },
+                    },
+                    {
+                        name: '收缩压极小值',
+                        type: 'line',
+                        data: p_h_min,
+                        symbol:'circle',
+				        smooth: true,
+				        animation: false,
+				        lineStyle: {
+				             normal: {
+				                width: 3
+				            }
+				        },
+                    },
+                    {
+                        name: '舒张压极大值',
+                        type: 'line',
+                        data: p_l_max,
+                        symbol:'circle',
+				        smooth: true,
+				        animation: false,
+				        lineStyle: {
+				             normal: {
+				                width: 3
+				            }
+				        },
+                    },
+                    {
+                        name: '舒张压极小值',
+                        type: 'line',
+                        data: p_l_min,
+                        symbol:'circle',
+				        smooth: true,
+				        animation: false,
+				        lineStyle: {
+				             normal: {
+				                width: 3
+				            }
+				        },
+                    }
+
+                ]
+            };
+			return option;
+        }
+        function optionRate(time,h_max,h_min){
+			          
+            var option = {
+                title: {
+//                    text: '血压心率',
+                    left: 0
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    },
+                },
+                legend: {
+                    data: ['心率极大值', '心率极小值']
+                },
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    bottom: '15%'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: time,
+                    scale: true,
+                    axisLabel: {
+		              interval: 0
+		            },
+                    boundaryGap : false,
+                    axisLine: {onZero: false},
+                    splitLine: {show: false},
+                    splitNumber: 20,
+                    min: 'dataMin',
+                    max: 'dataMax'
+                },
+                yAxis: [
+				    {
+				        name: '心率(次/分)',
+				        nameLocation: 'end',
+				        type: 'value',
+                        scale: true,
+                        splitArea: {
+                            show: true
+                        }
+				    }
+                ] ,
+                series: [
+                    {
+                        name: '心率极大值',
+                        type: 'line',
+                        data: h_max,
+                        symbol:'circle',
+				        smooth: true,
+				        animation: false,
+				        lineStyle: {
+				             normal: {
+				                width: 3
+				            }
+				        },
+                    },
+                    {
+                        name: '心率极小值',
+                        type: 'line',
+                        data: h_min,
+                        symbol:'circle',
+				        smooth: true,
+				        animation: false,
+				        lineStyle: {
+				             normal: {
+				                width: 3
+				            }
+				        },
+                    }
+
+                ]
+            };
+			return option;
+        }
+        function optionContent(time,c_max,c_min){
+			          
+            var option = {
+                title: {
+//                    text: '血压心率',
+                    left: 0
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    },
+                },
+                legend: {
+                    data: ['血氧饱和度极大值', '血氧饱和度极小值']
+                },
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    bottom: '15%'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: time,
+                    scale: true,
+                    axisLabel: {
+		              interval: 0
+		            },
+                    boundaryGap : false,
+                    axisLine: {onZero: false},
+                    splitLine: {show: false},
+                    splitNumber: 20,
+                    min: 'dataMin',
+                    max: 'dataMax'
+                },
+                yAxis: [
+				    {
+				        name: '血氧饱和度(%)',
+				        nameLocation: 'end',
+				        type: 'value',
+                        scale: true,
+                        splitArea: {
+                            show: true
+                        }
+				    }
+                ] ,
+                series: [
+                    {
+                        name: '血氧饱和度极大值',
+                        type: 'line',
+                        data: c_max,
+                        lineStyle:{
+                        	color: '#61a0a8'
+                        },
+                        symbol:'circle',
+				        smooth: true,
+				        animation: false,
+				        lineStyle: {
+				             normal: {
+				                width: 3
+				            }
+				        },
+                    },
+                    {
+                        name: '血氧饱和度极小值',
+                        type: 'line',
+                        data: c_min,
+                        symbol:'circle',
+                        lineStyle:{
+                        	color: '#d48265'
+                        },
+				        smooth: true,
+				        animation: false,
+				        lineStyle: {
+				             normal: {
+				                width: 3
+				            }
+				        },
+                    }
+
+                ]
+            };
+			return option;
+        }
+
+		function deviceInfo(obj){
+            if(obj.ships!=0){
+                $('#cache').text(obj.ships);
+                $('#watch_user').html("关联用户" + "<text class='sw_info_lable_num'>"+ $('#cache').text() +"</text>");
+                $('#cache').text('');
+                $('#ships').text(obj.ships);
+            }else{
+                $('#watch_user').html("关联用户");
+            }    
+            console.log("性别："+ obj.sex=='1'?'男性':'女性');
+            console.log("年龄："+ obj.age);
+            $('#devcode').text(obj.devcode);
+			$('#sex').text(obj.sex=='1'?'男性':'女性');
+			$('#sickness').text(obj.sickness);
+			$('#tel').text(obj.tel);
+			//处理时间
+			$('#devid').text(obj.id);
+			var date=new Date(obj.gmt_modified);
+			$('#gmt_modified').text(date.getFullYear()+"-"+parseInt(date.getMonth()+1)+"-"+date.getDate());
+			$('#age').text(obj.age);
+		}
+
+	
+		
+        var pos=new Array();
+        
+	    var map = new AMap.Map('map', {
+	    	center: [104.0084,30.710541],
+	        viewMode:'2D',
+	        features:['bg','point','road','building'],
+	        mapStyle:'amap://styles/light',
+	        layers: [
+	        		 new AMap.TileLayer.RoadNet()],
+	        zoom: 10
+	    });
+
+
+	    //点集合
+	    var sts = [{
+	                url: "https://a.amap.com/jsapi_demos/static/images/blue.png",
+	                size: new AMap.Size(32, 32),
+	                offset: new AMap.Pixel(-16, -16)
+	            }, {
+	                url: "https://a.amap.com/jsapi_demos/static/images/green.png",
+	                size: new AMap.Size(32, 32),
+	                offset: new AMap.Pixel(-16, -16)
+	            }, {
+	                url: "https://a.amap.com/jsapi_demos/static/images/orange.png",
+	                size: new AMap.Size(36, 36),
+	                offset: new AMap.Pixel(-18, -18)
+	            },{
+	                url: "https://a.amap.com/jsapi_demos/static/images/red.png",
+	                size: new AMap.Size(48, 48),
+	                offset: new AMap.Pixel(-24, -24)
+	            },{
+	                url: "https://a.amap.com/jsapi_demos/static/images/darkRed.png",
+	                size: new AMap.Size(48, 48),
+	                offset: new AMap.Pixel(-24, -24)
+	            }];
+	    
+	    
+
+	  	//创建 infoWindow 实例	
+	    var infoWindow = new AMap.InfoWindow({
+	       offset:new AMap.Pixel(3, -20),
+	       autoMove:true
+	    });
+	  	
+	  $.ajax({
+	   	   type: "GET",
+	       url: "https://www.3firelink.xyz/smart_watch/show/map/markers",
+	       cache:false,
+	       dataType: "jsonp",  
+	       // jsonp:"callback",//用以获取回调函数的参数名
+	       // jsonpCallback:"jsonpCallback",  //定义回调函数名称
+	       success:function(data){
+	       	for(var i=0;i<data.length;i++){
+	       		var marker=new AMap.Marker({
+	       			clickable : true ,
+	           	    position: new AMap.LngLat(data[i].lng,data[i].lat),
+	           	 	extData:data[i].id
+	           	});
+	       		marker.on("click",function(e){
+	       			var markerID=e.target.B.extData;
+	       			$.ajax({
+	       			   type: "GET",
+	       		       url: "https://www.3firelink.xyz/smart_watch/show/map/markerinfo",
+	       		       cache:false,
+	       		       data:{'id':markerID},
+	       		       dataType: "jsonp",
+	       		       success:function(data){
+	       		    	   $('#sw_info').html('');
+	       		    	   $('#sw_info').append('<p class="sw_info_title">设备信息</p><span class="sw_info_lable_static">健康信息:</span><br><div id="health_data" style="width: '+healthDataWidth*0.93+'px;height:'+healthDataHeight*1.2+'px;border-color: grey;border-width: 1px;border-style:solid;background-color: #ffffff;""><!-- <img style="height: 100%;width: 100%" src="../img/health.png"> --></div><br><div class="col-xs-12 col-sm-12 col-md-4 radio_item"><input type="radio" name="radio_health" value="1" class="radio_info" checked="true">血压</div><div class="col-xs-12 col-sm-12 col-md-4 radio_item"><input type="radio" name="radio_health" value="2" class="radio_info">心率</div><div class="col-xs-12 col-sm-12 col-md-4 radio_item"><input type="radio" name="radio_health" value="3" class="radio_info">血氧</div><br><div><div class="container-fluid" style="text-align: center;"><div class="row"><div class="col-md-12 "><div style="hidden:true;" id="cache"></div><button id="watch_user" onclick="showUser()" class="btn btn-default sw_info_lable" data-toggle="modal" data-target="#wx_lm_users">关联用户</button></div></div><div class="row "><div class="col-md-12"><button id="watch_user2" onclick="showTrail()" class="btn btn-default sw_info_lable" data-toggle="modal" data-target="#trail">查看轨迹</button></div><!-- <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4"><button id="watch_user3" onclick="setWatch()" class="btn btn-default sw_info_lable" data-toggle="modal" data-target="#watchsetting">手表设置</button></div> --></div></div></div> <img src="../img/setting.png" style="width: 10%;position: absolute;right: 5%;bottom: 5%"  onclick="setWatch(this)" data-toggle="modal" data-target="" >');
+                           deviceInfo(data[0]);
+	       		    	   radioHealth();
+	       		    	   $('#table').attr("hidden",false);
+	       		    	   infoWindow.setContent($('#table')[0]);
+						   infoWindow.open(map,e.target.getPosition());
+	       		       }
+	       			});
+	       			
+	       		});
+	       		pos.push(marker);
+	       		/*//添加点聚合组件
+		        map.plugin(["AMap.MarkerClusterer"],function() {
+		          var cluster = new AMap.MarkerClusterer(
+		              map,     // 地图实例
+		              pos,    // 海量点组成的数组
+		              {
+		                  styles: sts
+		              });
+		        });*/
+	       	}
+	       	
+	       	map.add(pos);
+	      	//添加点聚合组件
+	        /*map.plugin(["AMap.MarkerClusterer"],function() {
+	          var cluster = new AMap.MarkerClusterer(
+	              map,     // 地图实例
+	              pos,    // 海量点组成的数组
+	              {
+	                  styles: sts
+	              });
+	        });*/
+	          
+	       }
+	   	
+	   });
+	  
+
+	  	//鲜昊琦
+		//省市区的级联选择操作全部写在此script标签内
+
+		//获取省的全部列表
+		$.ajax({
+			type:"GET",
+			url: "https://www.3firelink.xyz/smart_watch/show/province",
+	       	cache:false,
+	      	dataType: "jsonp",  
+	       // jsonp:"callback",//用以获取回调函数的参数名
+	       // jsonpCallback:"jsonpCallback",  //定义回调函数名称
+	       success:function(data){
+	       //alert(data[0].province);
+	       	//遍历结果，显示在对应的select上
+	       	var options = "<option disabled selected style='display:none;'> 选择省</option>";
+	       	for(var index=0;index<data.length;index++){
+	       		
+	       		options+="<option value="+data[index].id+">"+data[index].province+"</option>";
+	       	}
+
+	       	$("#provincesSelect").html(options);
+
+	       }
+		});
+
+		//当选择了省的时候获取这个省的市列表
+		function getCitiesOfAProvince(){
+			//标记当前选中的level是省
+			$("#selectLevel").val(1);
+
+			//获取选择的省
+			var provinceId = $("#provincesSelect").val();
+
+			//获取市
+			$.ajax({
+				type:"GET",
+				dataType:"jsonp",
+				cache:false,
+				url:"https://www.3firelink.xyz/smart_watch/show/city?id="+provinceId,
+				success:function(data){
+					//遍历结果显示在对应的select上
+					var options = "<option disabled selected style='display:none;'> 选择市</option>";
+
+					for(var index=0;index<data.length;index++){
+						options+="<option value="+data[index].id+">"+data[index].city+"</option>";
+					}
+
+					$("#citiesSelect").html(options);
+				}
+			});
+
+			//将区的select内容清空
+			var options="<option disabled selected style='display:none;'> 选择区</option>";
+			$("#areasSelect").html(options);
+
+		}
+
+		//当选择了市的时候获取这个市的区县列表
+		function getAreasOfACity(){
+			//标记当前选中的level是市
+			$("#selectLevel").val(2);
+
+			//获取选择的市
+			var cityId = $("#citiesSelect").val();
+
+			$.ajax({
+				type:"GET",
+				dataType:"jsonp",
+				cache:false,
+				url:"https://www.3firelink.xyz/smart_watch/show/area?id="+cityId,
+				success:function(data){
+
+					var options="<option disabled selected style='display:none;'> 选择区</option>";
+					for(var index=0;index<data.length;index++){
+						options+="<option value="+data[index].id+">"+data[index].area+"</option>";
+					}
+
+					$("#areasSelect").html(options);
+				}
+			});
+		}
+
+		//选择了区县的时候记录当前选择的区县level
+		function recordAreaLevel(){
+			$("#selectLevel").val(3);
+		}
+
+
+		//通过地区和在线状态条件筛选设备
+		function findBySelectValue(){
+
+			//获取在线状态
+			var onlineStu = $("#onlineStu").val();
+
+			//获取selectLevel的值，判断选中的地区层级
+			var selectLevel = $("#selectLevel").val();
+			var areaId = 0;
+			if(selectLevel){
+				//如果有选地区
+
+				if(selectLevel==1){
+					//按省级查询
+					areaId =$("#provincesSelect").val();
+				}else if(selectLevel==2){
+					//按市级查询
+					areaId =$("#citiesSelect").val();
+				}else if(selectLevel==3){
+					//按区县查询
+					areaId =$("#areasSelect").val();
+				}
+
+				//根据areaId和level查询地区全名
+				$.ajax({
+					type:"GET",
+					dataType:"jsonp",
+					cache:false,
+					url:"https://www.3firelink.xyz/smart_watch/show/fullname?id="+areaId+"&level="+selectLevel,
+					success:function(data){
+
+						//根据地区全名和在线状态筛选设备
+						findByAreaAndOnline(data.fullname,onlineStu);
+					}
+				});
+
+
+			}else{
+				//如果没选地区
+
+				//根据在线状态筛选设备
+				findByAreaAndOnline("",onlineStu);
+
+			}
+
+		}
+
+		//调用条件筛选接口筛选设备
+		function findByAreaAndOnline(area,online){
+
+			$.ajax({
+				type:"GET",
+				dataType:"jsonp",
+				cache:false,
+				url:"https://www.3firelink.xyz/smart_watch/show/map/markers?area="+area+"&online="+online,
+				success:function(data){
+					
+
+					//更新地图显示
+
+					//删除地图上显示的marker
+					//console.info(pos);
+					map.remove(pos);
+					pos = new Array();
+
+			       	for(var i=0;i<data.length;i++){
+			       		var marker=new AMap.Marker({
+			       			clickable : true ,
+			           	    position: new AMap.LngLat(data[i].lng,data[i].lat),
+			           	 	extData:data[i].id
+			           	});
+			       		marker.on("click",function(e){
+			       			var markerID=e.target.B.extData;
+			       			$.ajax({
+			       			   type: "GET",
+			       		       url: "https://www.3firelink.xyz/smart_watch/show/map/markerinfo",
+			       		       cache:false,
+			       		       data:{'id':markerID},
+			       		       dataType: "jsonp",
+			       		       success:function(data){
+			       		    	   deviceInfo(data[0]);
+
+			       		    	   $('#table').attr("hidden",false);
+			       		    	   infoWindow.setContent($('#table')[0]);
+								   infoWindow.open(map,e.target.getPosition());
+			       		       }
+			       			});
+			       			
+			       		});
+			       		pos.push(marker);
+			       	}
+			       	
+			       	map.add(pos);
+				}
+			});
+		}
+
+
+		/**根据设备的编号查询设备数据
+		* flag:设备的编号
+		*/
+		function findDeviceByCode(flag){
+			$.ajax({
+				type:"GET",
+				dataType:"jsonp",
+				cache:false,
+				url:"https://www.3firelink.xyz/smart_watch/show/map/marker?flag="+flag,
+				success:function(data){
+					console.info(data);
+
+					//更新地图显示当前查询到的设备信息
+					//删除地图上显示的marker
+					//console.info(pos);
+					map.remove(pos);
+					pos = new Array();
+
+			       	for(var i=0;i<data.length;i++){
+
+			       		if(data[i].lng&&data[i].lat){
+			       			var marker=new AMap.Marker({
+			       			clickable : true ,
+			           	    position: new AMap.LngLat(data[i].lng,data[i].lat),
+			           	 	extData:data[i].id
+				           	});
+				       		marker.on("click",function(e){
+				       			var markerID=e.target.B.extData;
+				       			$.ajax({
+				       			   type: "GET",
+				       		       url: "https://www.3firelink.xyz/smart_watch/show/map/markerinfo",
+				       		       cache:false,
+				       		       data:{'id':markerID},
+				       		       dataType: "jsonp",
+				       		       success:function(data){
+				       		    		deviceInfo(data[0]);
+				       		    		$('#sw_info').html('');
+	       		    	   				$('#sw_info').append('<p class="sw_info_title">设备信息</p><span class="sw_info_lable_static">健康信息:</span><br><div id="health_data" style="width: '+healthDataWidth*0.93+'px;height:'+healthDataHeight*1.2+'px;border-color: grey;border-width: 1px;border-style:solid;""><!-- <img style="height: 100%;width: 100%" src="../img/health.png"> --></div><br><div class="col-xs-12 col-sm-12 col-md-4 radio_item"><input type="radio" name="radio_health" value="1" class="radio_info" checked="true">血压</div><div class="col-xs-12 col-sm-12 col-md-4 radio_item"><input type="radio" name="radio_health" value="2" class="radio_info">心率</div><div class="col-xs-12 col-sm-12 col-md-4 radio_item"><input type="radio" name="radio_health" value="3" class="radio_info">血氧</div><br><div><div class="container-fluid" style="text-align: center;"><div class="row"><div class="col-md-12 "><div style="hidden:true;" id="cache"></div><button id="watch_user" onclick="showUser()" class="btn btn-default sw_info_lable" data-toggle="modal" data-target="#wx_lm_users">关联用户</button></div></div><div class="row "><div class="col-md-12"><button id="watch_user2" onclick="showTrail()" class="btn btn-default sw_info_lable" data-toggle="modal" data-target="#trail">查看轨迹</button></div><!-- <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4"><button id="watch_user3" onclick="setWatch()" class="btn btn-default sw_info_lable" data-toggle="modal" data-target="#watchsetting">手表设置</button></div> --></div></div></div> <img src="../img/setting.png" style="width: 10%;position: absolute;right: 5%;bottom: 5%"  onclick="setWatch(this)" data-toggle="modal" data-target="" >');
+				       		    	   radioHealth();
+				       		    	   $('#table').attr("hidden",false);
+				       		    	   infoWindow.setContent($('#table')[0]);
+									   infoWindow.open(map,e.target.getPosition());
+				       		       }
+				       			});
+				       			
+				       		});
+				       		pos.push(marker);
+			       		}
+			       		
+			       	}
+			       	
+			       	map.add(pos);
+				}
+			});
+		}
+
+		/**监听输入设备的编号查询的按键盘回车按钮事件
+		*
+		*/
+		$('#searchByInput').bind('keypress',function(event){
+			//监听回车事件
+	        if(event.keyCode == "13")    
+	        {  
+	            //判断对应输入框有没有值
+	            var code = $('#searchByInput').val();
+	            if(code){
+	            	//如果有值
+	            	//去空格
+	            	code = code.replace(/\s/g, "");
+
+	            	if(code!=""){
+	            		//访问服务器请求数据
+	            		findDeviceByCode(code);
+
+	            	}
+	            }
+	        }
+    	});
+
+
+	</script>
+
+</body>
+</html>

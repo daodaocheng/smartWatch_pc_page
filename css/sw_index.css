@@ -1,0 +1,171 @@
+.clear{ height:0px;font-size:0;clear:both;}
+
+.modal-body{
+    overflow-y: scroll;
+}
+
+.user_avatar{
+	width: auto;
+	height: 50%;
+	padding-bottom: 80px;
+}
+
+.sw_info_lable_num{
+    width:3%;
+    padding-left:2.5%;
+    padding-right:2.5%;
+    height:3%;
+    border-radius:50%;
+    color: #000000;
+    font-size: 1em;
+    background-color:#f0e39d;
+}
+
+.sw_head_bar_buttons{
+    height: 55px;
+    width: 100%;
+	padding-top: 0.6%;
+	padding-bottom: 0.3%;
+	font-size: 1.3em;
+    padding-right: 2em;
+	color: #000000;
+}
+
+
+.sw_bar_style{
+	background-color: #f4f4f4;
+}
+
+.sw_bar_logo{
+	float: left;
+	padding-left: 2%;
+}
+
+.sw_bar_logo_img{
+	width: 65%;
+	height: 65%;
+}
+
+.sw_info_select_div{
+	padding-top: 0.1%;
+	padding-bottom: 0.5%;
+    background-color: #FFFFFF;
+}
+
+.sw_info_select_div select{
+	margin-left: 3%;
+	border-color:#7fb7ff;
+	border-style:solid;
+	height: 2em;
+	width: 10%;
+}
+
+.sw_info_select_div input{
+	margin-left: 3%;
+	border-color:#7fb7ff;
+	border-style:ridge;
+	width: 20%;
+	height: 2em;
+	color: grey;
+	float: right;
+	margin-right: 3%;
+}
+
+/*
+.sw_info_widow{
+	border-color: grey;
+	border-width: 1px;
+	border-style:solid;
+	height: 1850px;
+    background-color: #ffffff;
+}
+*/
+
+.sw_info_title{
+	text-align: center;
+	font-size: 1.5em;
+    margin-top:1.2em;
+}
+
+.info_btn{
+    width: 80%
+}
+
+.sw_info_lable_static{
+	font-size: 1.2em;
+}
+
+.sw_info_lable{
+	font-size: 1.2em;
+    width: 80%;
+    height: 2.4em;
+    padding-left: 1%;
+    padding-right: 2.5%;
+    margin-bottom: 1em;
+    margin-top: 1em;
+    margin-right:1em; 
+    border-radius: 1.2em;
+    display:inline-block;
+    flex-direction: row;
+    color: #000000;
+    background-color:#deedff;
+    text-align: center;
+    padding-top:0.5em;
+}
+
+.sw_info_lable:hover{
+    color: #ffffff;
+    background-color: #7fb7ff;
+}
+
+
+.sw_table_span{
+	font-size: 0.9em;
+}
+
+.sw_table_value_span{
+	font-size: 0.9em;
+	color: grey;
+}
+
+#user_info{
+    height: auto
+}
+
+.watch_set_item{
+    height: 2.5em;
+    width: auto;
+}
+
+.radio_item{
+	display: flex;
+  	align-items: center;
+}
+
+.radio_info{
+	font-size: larger;
+}
+
+.info_window_table{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	height: 100%;
+}
+
+.info_table_item{
+	display: flex;
+	/*justify-content: center;*/
+	/*align-items: center;*/
+	font-size: larger;
+	font-family:verdana;
+	font-weight:bold; 
+}
+
+
+
+.sw_info_right{
+    background-color: #f8f8f8;
+    height: 100%;
+}

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>数据统计可视化信息展示</title>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="Access-Control-Allow-Origin" content="*">
+	<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  
+	<link rel="stylesheet" type="text/css" href="../css/sw_index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.1.0-release/echarts.js"></script>
+</head>
+<body class="container-fluid">
+
+    <!-- 头部显示导航栏 -->
+    <nav class="navbar navbar-light bg-faded" id="navbar">
+        <div class="sw_head_bar_buttons sw_bar_style">
+            <!-- 导航栏logo-->
+            <div class="sw_bar_logo">
+                <img class="sw_bar_logo_img" src="http://sc-yf.com/bssets/i/logo.png">
+            </div>
+
+            <!-- 导航栏按钮 -->
+            <div style="float: right;">
+                <span ><a href="index.html">首页</a></span>&nbsp;&nbsp;&nbsp;&nbsp;<span><a href="statistics.html">数据统计</a></span>
+            </div>
+        </div>
+    </nav>
+    <!-- 头部显示导航栏结束 -->
+    <!-- 条件选择框 -->
+    <div class="sw_info_select_div">
+     
+        <input type="text" id="selectLevel" autocomplete="off" hidden="hidden"> 
+
+        <select id="provincesSelect" onchange="getCitiesOfAProvince()">
+            <option disabled selected style='display:none;'> 选择省</option>
+        </select>
+
+        <select id="citiesSelect" onchange="getAreasOfACity()">
+            <option disabled selected style='display:none;'> 选择市</option>
+        </select>
+
+        <select id="areasSelect" onchange="recordAreaLevel()">
+            <option disabled selected style='display:none;'> 选择区</option>
+        </select>
+
+        <input id="dateCondition" maxlength="10" size="10" type="text" placeholder="截止时间(例):2018-01-01">
+
+        <button class="btn btn-default btn-sm" onclick="searchByCondition()">确认</button>
+
+    </div>
+    <!-- 条件选择框结束 -->
+    <br>
+    <!--第一行-->
+    <div class="row">
+
+        <div class="col-sm-12 col-md-3">
+            <!--心率-->
+            <div id="heartRateChart" style="width: 450px; height: 350px"></div>
+        </div>
+            
+        <div class="col-sm-12 col-md-3">
+            <!--动脉压-->
+            <div id="arterialPressureChart" style="width: 450px; height: 350px"></div>
+        </div>
+
+        <div class="col-sm-12 col-md-3">
+            <!--血氧-->
+            <div id="bloodOxygenChart"  style="width: 450px; height: 350px"></div>
+        </div>
+
+        <div class="col-sm-12 col-md-3">
+            <!--手表数量-->
+            <div id=""  style="width: 450px; height: 350px;text-align: center; line-height: 200px;">
+                
+                    <span><font size="6" face="verdana">手表数量：</font><font id="watchAmount"  size="6" face="verdana" color="#2F5597"></font></span>
+            </div>
+        </div>
+        
+    </div>
+    <br><br>
+    <!--第二行-->
+    <div class="row">
+
+        <div class="col-sm-12 col-md-3">
+            <div id="oldPeopleIllnessChart" style="height: 380px;width: 350px"></div>
+        </div>
+
+        <div class="col-sm-12 col-md-3">
+            <div id="genderChart" style="height: 380px;width: 350px"></div>
+        </div>
+
+        <div class="col-sm-12 col-md-3">
+            <div id="ageChart" style="height: 380px;width: 350px"></div>
+        </div>
+        
+        <div class="col-sm-12 col-md-3">
+            <div id="stepChart" style="height: 380px;width: 350px" hidden="hidden"></div>
+        </div>
+        
+    </div>
+    
+
+    <script type="text/javascript">
+        //获取省的全部列表
+        $.ajax({
+            type:"GET",
+            url: "https://www.3firelink.xyz/smart_watch/show/province",
+            cache:false,
+            dataType: "jsonp",  
+           // jsonp:"callback",//用以获取回调函数的参数名
+           // jsonpCallback:"jsonpCallback",  //定义回调函数名称
+           success:function(data){
+           //alert(data[0].province);
+            //遍历结果，显示在对应的select上
+            var options = "<option disabled selected style='display:none;'> 选择省</option>";
+            for(var index=0;index<data.length;index++){
+                
+                options+="<option value="+data[index].id+">"+data[index].province+"</option>";
+            }
+
+            $("#provincesSelect").html(options);
+
+           }
+        });
+
+        //当选择了省的时候获取这个省的市列表
+        function getCitiesOfAProvince(){
+            //标记当前选中的level是省
+            $("#selectLevel").val(1);
+
+            //获取选择的省
+            var provinceId = $("#provincesSelect").val();
+
+            //获取市
+            $.ajax({
+                type:"GET",
+                dataType:"jsonp",
+                cache:false,
+                url:"https://www.3firelink.xyz/smart_watch/show/city?id="+provinceId,
+                success:function(data){
+                    //遍历结果显示在对应的select上
+                    var options = "<option disabled selected style='display:none;'> 选择市</option>";
+
+                    for(var index=0;index<data.length;index++){
+                        options+="<option value="+data[index].id+">"+data[index].city+"</option>";
+                    }
+
+                    $("#citiesSelect").html(options);
+                }
+            });
+
+            //将区的select内容清空
+            var options="<option disabled selected style='display:none;'> 选择区</option>";
+            $("#areasSelect").html(options);
+
+        }
+
+        //当选择了市的时候获取这个市的区县列表
+        function getAreasOfACity(){
+            //标记当前选中的level是市
+            $("#selectLevel").val(2);
+
+            //获取选择的市
+            var cityId = $("#citiesSelect").val();
+
+            $.ajax({
+                type:"GET",
+                dataType:"jsonp",
+                cache:false,
+                url:"https://www.3firelink.xyz/smart_watch/show/area?id="+cityId,
+                success:function(data){
+
+                    var options="<option disabled selected style='display:none;'> 选择区</option>";
+                    for(var index=0;index<data.length;index++){
+                        options+="<option value="+data[index].id+">"+data[index].area+"</option>";
+                    }
+
+                    $("#areasSelect").html(options);
+                }
+            });
+        }
+
+        //选择了区县的时候记录当前选择的区县level
+        function recordAreaLevel(){
+            $("#selectLevel").val(3);
+        }
+
+
+        // 基于准备好的dom，初始化echarts实例
+
+        /**心率**/
+        var heartRateChart = echarts.init(document.getElementById('heartRateChart'));
+
+        // var heartRateChartLabelOption = {
+        //         show: false,
+        //         rotate: 90,
+        //         align: 'left',
+        //         verticalAlign: 'middle',
+        //         position: 'insideBottom',
+        //         distance: 15,
+        //         formatter: '{c}  {name|{a}}',
+        //         fontSize: 16,
+        //         rich: {
+        //             name: {
+        //                 textBorderColor: '#fff'
+        //             }
+        //         }
+        // };
+
+        // heartRateChartOption = {
+        //     title : {
+        //     text: '心率',
+        //     x:'center'
+        //     },
+        //     color: ['#003366', '#006699', '#4cabce', '#e5323e'],
+        //     tooltip: {
+        //         trigger: 'axis',
+        //         axisPointer: {
+        //             type: 'shadow'
+        //         }
+        //     },
+        //     legend: {
+        //         orient: 'horizontal',
+        //         bottom: 'bottom',
+        //         data: ['Forest', 'Steppe', 'Desert', 'Wetland']
+        //     },
+        //     calculable: true,
+        //     xAxis: [
+        //         {
+        //             type: 'category',
+        //             axisTick: {show: false},
+        //             data: ['2012', '2013', '2014', '2015', '2016']
+        //         }
+        //     ],
+        //     yAxis: [
+        //         {
+        //             type: 'value'
+        //         }
+        //     ],
+        //     series: [
+        //         {
+        //             name: 'Forest',
+        //             type: 'bar',
+        //             barGap: 0,
+        //             label: heartRateChartLabelOption,
+        //             data: [320, 332, 301, 334, 390]
+        //         },
+        //         {
+        //             name: 'Steppe',
+        //             type: 'bar',
+        //             label: heartRateChartLabelOption,
+        //             data: [220, 182, 191, 234, 290]
+        //         },
+        //         {
+        //             name: 'Desert',
+        //             type: 'bar',
+        //             label: heartRateChartLabelOption,
+        //             data: [150, 232, 201, 154, 190]
+        //         },
+        //         {
+        //             name: 'Wetland',
+        //             type: 'bar',
+        //             label: heartRateChartLabelOption,
+        //             data: [98, 77, 101, 99, 40]
+        //         }
+        //     ]
+        // };
+
+        // heartRateChart.setOption(heartRateChartOption);
+        /**心率图表结束**/
+
+        /**平均动脉压**/
+        var arterialPressureChart = echarts.init(document.getElementById('arterialPressureChart'));
+
+        /**平均动脉压图表结束**/
+
+        /**血氧**/
+        var bloodOxygenChart = echarts.init(document.getElementById('bloodOxygenChart'));
+
+        /**血氧图表结束**/
+
+        
+        /**老年病**/
+        var oldPeopleIllnessChart = echarts.init(document.getElementById("oldPeopleIllnessChart"));
+
+    /**老年病图表结束**/
+
+     /**性别**/
+        var genderChart = echarts.init(document.getElementById("genderChart"));
+
+    /**性别图表结束**/
+
+     /**年龄**/
+        var ageChart = echarts.init(document.getElementById("ageChart"));
+
+    /**年龄图表结束**/
+
+     /**计步**/
+        var stepChart = echarts.init(document.getElementById("stepChart"));
+
+    /**计步图表结束**/
+
+
+    
+    /**解析访问服务器之后返回的需要显示在柱状图上的数据，解析成图标需要的格式，由于柱状图的数据格式一致，所以只写一个方法
+    * data 被解析的数据
+    * titleText: 为统计图命名
+    */
+    function makeBarOption(data,titleText){
+
+        //初始化legend里的data
+        var legendData = new Array();
+        legendData.push("正常");
+        legendData.push("偏高");
+        legendData.push("偏低");
+
+        //初始化xAxis的data
+        var xAxisData = new Array();
+
+        //初始化series里的data
+
+        //偏高
+        var greate = new Array();
+        //正常
+        var between = new Array();
+        //偏低
+        var low = new Array();
+
+
+        //遍历data
+        for(var index = 0;index<data.length;index++){
+            //将日期放入xAxisData
+            xAxisData.push(data[index].date);
+            //将偏高的数据放入数组
+            greate.push(data[index].data.great);
+            //将正常的数据放入数组
+            between.push(data[index].data.between);
+            //将偏低的数据放入数组
+            low.push(data[index].data.low);
+        }
+
+        var labelOption = {
+                show: false,
+                rotate: 90,
+                align: 'left',
+                verticalAlign: 'middle',
+                position: 'insideBottom',
+                distance: 15,
+                formatter: '{c}  {name|{a}}',
+                fontSize: 16,
+                rich: {
+                    name: {
+                        textBorderColor: '#fff'
+                    }
+                }
+        };
+
+
+        //构造柱状统计图需要显示的option
+        var option = {
+            title : {
+            text: titleText,
+            x:'center'
+            },
+            color: ['#003366', '#006699', '#4cabce'],
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            legend: {
+                orient: 'horizontal',
+                bottom: 'bottom',
+                data: legendData
+            },
+            calculable: true,
+            xAxis: [
+                {
+                    type: 'category',
+                    inverse:true,
+                    axisTick: {show: false},
+                    data: xAxisData
+                }
+            ],
+            yAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            series: [
+                {
+                    name: legendData[0],
+                    type: 'bar',
+                    barGap: 0,
+                    label: labelOption,
+                    data: between
+                },
+                {
+                    name: legendData[1],
+                    type: 'bar',
+                    label: labelOption,
+                    data: greate
+                },
+                {
+                    name: legendData[2],
+                    type: 'bar',
+                    label: labelOption,
+                    data: low
+                }
+            ]
+        };
+
+        return option;
+    }
+
+
+    //将通过访问服务器获取到的数据解析成饼图需要的数据格式，因为整页的饼图数据格式一致，所以只定义一个方法
+    /**
+    * data:被解析的数据
+    * titleText: 为统计图命名
+    */
+    function makePieOption(data,titleText){
+
+        //初始化legend中的data数据
+        var legendData = new Array();
+        //初始化series中的data数据
+        var seriesData = new Array();
+
+        //遍历服务器返回的数据
+        for(var index=0;index<data.length;index++){
+
+            legendData.push(data[index].label);
+
+            seriesData.push({"value":data[index].amount,"name":data[index].label});
+        }
+
+        //构造option
+        var option = {
+            title : {
+                text: titleText,
+                x:'center'
+            },
+            tooltip : {
+                trigger: 'item',
+                formatter: "{a} <br/>{b} : {c} ({d}%)"
+            },
+            legend: {
+                orient: 'horizontal',
+                bottom: 'bottom',
+                data: legendData
+            },
+            series : [
+                {
+                    name: '百分比',
+                    type: 'pie',
+                    radius : '55%',
+                    center: ['50%', '40%'],
+                    data:seriesData,
+                    itemStyle: {
+                        emphasis: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+
+        return option;
+    }
+
+
+
+    /******从服务器请求数据并且将数据填入对应图表部分******/
+
+    /**从服务器请求数据，并且将数据处理完成后放入指定的图表中
+    * serverUrl :请求的链接
+    * type: 要解析成 柱状图还是饼图的option , 1:柱状图，2：饼图
+    * chart:数据处理完成之后要放入哪一个chart
+    * titleText:这个统计图的命名
+    */
+    function requestDataAndSetChart(serverUrl,type,chart,titleText){
+        $.ajax({
+            type:"GET",
+            dataType:"jsonp",
+            cache:false,
+            url:serverUrl,
+            success:function(data){
+
+                //构造option
+                var option =new Object();
+
+                if(type==1){
+                    //解析成柱状图的option
+                    option = makeBarOption(data,titleText);
+                }
+
+                if(type==2){
+                    //解析成饼图的option
+                    option = makePieOption(data,titleText);
+                }  
+
+                //将数据放入图表
+                chart.setOption(option);
+            }
+        });
+    }
+
+    //请求手表数量
+    function getWatchAmount(areaFullname){
+        $.ajax({
+            type:"GET",
+            dataType:"jsonp",
+            cache:false,
+            url:"https://www.3firelink.xyz/smart_watch/show/chardata/total?area="+areaFullname,
+            success:function(data){
+
+                $("#watchAmount").text(data.total);
+            }
+        });
+    }
+
+
+    //心率
+    window.setTimeout(requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/heart?date=&area=",1,heartRateChart,"心率"),500);
+    //平均动脉压
+    window.setTimeout(requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/pressure?date=&area=",1,arterialPressureChart,"平均动脉压"),500);
+    //血氧
+    window.setTimeout(requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/oxygen?date=&area=",1,bloodOxygenChart,"血氧"),500);
+    //老年病
+    window.setTimeout(requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/disease?area=",2,oldPeopleIllnessChart,"老年病"),1500);
+    //性别
+    window.setTimeout(requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/sex?area=",2,genderChart,"性别"),1500);
+    //年龄
+    window.setTimeout(requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/age?area=",2,ageChart,"年龄"),1500);
+    //计步
+    //window.setTimeout(requestDataAndSetChart("",2,stepChart,"计步"),1500);
+    //手表数量
+    getWatchAmount('');
+
+
+
+
+    //点击确认按钮时根据地区和时间筛选数据显示在图表上
+    function searchByCondition(){
+
+        //获取用户输入的时间
+        var dateCondition = $("#dateCondition").val();
+
+
+        //去空格
+        dateCondition = dateCondition.replace(/\s/g, "");
+
+        if(dateCondition!=""){
+            //匹配正则表达式
+            var dateConditionRegResult = dateCondition.match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+            if(!dateConditionRegResult){
+                dateConditionRegResult='';
+                alert("请输入正确的时间格式 例如:2018-01-01");
+            }
+        }
+        
+
+
+        dateCondition.match();
+
+
+        //获取当前用户选择的地区是哪一个层级
+        var selectLevel = $("#selectLevel").val();
+
+
+        if(selectLevel){
+            //如果用户选择了地区
+            //判断用户选择的哪一级地区
+            var areaId = 0;
+
+            if(selectLevel==1){
+                //选择的是省
+                areaId = $("#provincesSelect").val();
+            }
+
+            if(selectLevel==2){
+                //选择的是市
+                areaId = $("#citiesSelect").val();
+            }
+
+            if(selectLevel==3){
+                //选择的是区
+                areaId = $("#areasSelect").val();
+            }
+
+            //根据用户选择的地区Id和地区层级查询此地区全名
+            $.ajax({
+                type:"GET",
+                dataType:"jsonp",
+                cache:false,
+                url:"https://www.3firelink.xyz/smart_watch/show/fullname?id="+areaId+"&level="+selectLevel,
+                success:function(data){
+                    //根据地区和时间筛选图表信息
+                    var areaFullname = data.fullname;
+                    //去空格
+                    areaFullname =areaFullname.replace(/\s/g,"");
+
+
+                    //访问服务器，请求图表数据
+                    //心率
+                    requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/heart?date="+dateCondition+"&area="+areaFullname,1,heartRateChart,"心率");
+                    //平均动脉压
+                    requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/pressure?date="+dateCondition+"&area="+areaFullname,1,arterialPressureChart,"平均动脉压");
+                    //血氧
+                    requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/oxygen?date="+dateCondition+"&area="+areaFullname,1,bloodOxygenChart,"血氧");
+                    //老年病
+                    requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/disease?area="+areaFullname,2,oldPeopleIllnessChart,"老年病");
+                    //性别
+                    requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/sex?area="+areaFullname,2,genderChart,"性别");
+                    //年龄
+                    requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/age?area="+areaFullname,2,ageChart,"年龄");
+                    //计步
+                    //requestDataAndSetChart("",2,stepChart,"计步");
+
+                    //手表数量
+                    getWatchAmount(areaFullname);
+                   
+                }
+            });
+
+            
+
+        }else{
+            //如果用户没有选择地区
+            //直接根据时间筛选图标信息
+
+            //访问服务器，请求图表数据
+            //心率
+            requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/heart?date="+dateCondition+"&area=",1,heartRateChart,"心率");
+            //平均动脉压
+            requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/pressure?date="+dateCondition+"&area=",1,arterialPressureChart,"平均动脉压");
+            //血氧
+            requestDataAndSetChart("https://www.3firelink.xyz/smart_watch/show/chardata/oxygen?date="+dateCondition+"&area=",1,bloodOxygenChart,"血氧");
+           
+            
+
+
+        }
+    }
+
+
+    </script>
+</body>
+</html>
